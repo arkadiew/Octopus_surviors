@@ -42,7 +42,7 @@
 1. Установи [Godot 4.x](https://godotengine.org/download).  
 2. Клонируй репозиторий:
    ```bash
-   git clone https://github.com/username/project-name.git
+   git clone https://github.com/arkadiew/Octopus_surviors.git
    
 ---
 
