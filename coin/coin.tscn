@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3 uid="uid://etrmlpw8qnsk"]
+
+[ext_resource type="Script" path="res://coin/coin.gd" id="1_javad"]
+[ext_resource type="Texture2D" uid="uid://ci0mc0pq1gl0h" path="res://assets/Ninja Adventure - Asset Pack/Items/Object/Gourd.png" id="2_7fxen"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_0u2yw"]
+radius = 18.9737
+
+[node name="Coin" type="Area2D" groups=["coins"]]
+scale = Vector2(1.61444, 1.61444)
+script = ExtResource("1_javad")
+
+[node name="AnimatedSprite2D" type="Sprite2D" parent="."]
+scale = Vector2(2.52513, 2.52513)
+texture = ExtResource("2_7fxen")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_0u2yw")

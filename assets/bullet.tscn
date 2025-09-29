@@ -1,0 +1,43 @@
+[gd_scene load_steps=7 format=3 uid="uid://c1fnlijea5uuy"]
+
+[ext_resource type="Script" path="res://assets/bullet.gd" id="1_0eitv"]
+[ext_resource type="Texture2D" uid="uid://dl41bgwjnes67" path="res://assets/Ninja Adventure - Asset Pack/FX/Projectile/BigShuriken.png" id="1_urfxo"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_exg23"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cfx6s"]
+atlas = ExtResource("1_urfxo")
+region = Rect2(0, 0, 23, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gvrfb"]
+atlas = ExtResource("1_urfxo")
+region = Rect2(23, 0, 23, 23)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_beq2q"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cfx6s")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gvrfb")
+}],
+"loop": true,
+"name": &"new_animation",
+"speed": 5.0
+}]
+
+[node name="Bullet" type="CharacterBody2D" groups=["bullet"]]
+scale = Vector2(0.945504, 0.945504)
+collision_layer = 8
+collision_mask = 150
+script = ExtResource("1_0eitv")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+scale = Vector2(1.19915, 1.28642)
+shape = SubResource("CircleShape2D_exg23")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(1.42568, 1.42568)
+sprite_frames = SubResource("SpriteFrames_beq2q")
+animation = &"new_animation"

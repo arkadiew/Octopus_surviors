@@ -1,0 +1,98 @@
+[gd_scene load_steps=11 format=3 uid="uid://u65qba02verp"]
+
+[ext_resource type="Script" path="res://enemy/enemy.gd" id="1_uraep"]
+[ext_resource type="Texture2D" uid="uid://bh6hx2g5qcsqr" path="res://assets/Ninja Adventure - Asset Pack/Actor/Monsters/Axolot/SpriteSheet.png" id="2_g8mkf"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0w2kt"]
+atlas = ExtResource("2_g8mkf")
+region = Rect2(0, 48, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mc1th"]
+atlas = ExtResource("2_g8mkf")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8tcvc"]
+atlas = ExtResource("2_g8mkf")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_63gsj"]
+atlas = ExtResource("2_g8mkf")
+region = Rect2(48, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b3x5p"]
+atlas = ExtResource("2_g8mkf")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_3ayuc"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0w2kt")
+}],
+"loop": false,
+"name": &"death",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mc1th")
+}],
+"loop": true,
+"name": &"down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8tcvc")
+}],
+"loop": true,
+"name": &"left",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63gsj")
+}],
+"loop": true,
+"name": &"right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b3x5p")
+}],
+"loop": true,
+"name": &"up",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_dgwp5"]
+radius = 9.58475
+height = 24.2141
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kxrsd"]
+size = Vector2(19.2982, 17.6706)
+
+[node name="enemy" type="CharacterBody2D" groups=["Enemies", "enemy"]]
+scale = Vector2(4.30093, 4.30093)
+collision_layer = 16
+collision_mask = 14
+script = ExtResource("1_uraep")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_3ayuc")
+animation = &"down"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+scale = Vector2(0.425039, 0.460904)
+shape = SubResource("CapsuleShape2D_dgwp5")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="."]
+navigation_layers = 128
+path_postprocessing = 1
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+position = Vector2(-0.465016, -0.465016)
+shape = SubResource("RectangleShape2D_kxrsd")
