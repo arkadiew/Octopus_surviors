@@ -52,10 +52,7 @@ project/
 
 ---
 
-## 🖥️ Скриншоты
-<img width="1153" height="683" alt="image" src="https://github.com/user-attachments/assets/70c87ea4-ae8a-458b-938f-638a6e975e1d" />
-<img width="1147" height="684" alt="image" src="https://github.com/user-attachments/assets/0ec33676-dbb5-4c7b-b81c-1488193fd674" />
-<img width="1156" height="692" alt="image" src="https://github.com/user-attachments/assets/83892a7e-3a60-44b2-adc1-2704d84dbd6c" />
+
 
 
 
