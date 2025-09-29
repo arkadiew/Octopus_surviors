@@ -43,6 +43,8 @@
 2. Клонируй репозиторий:
    ```bash
    git clone https://github.com/arkadiew/Octopus_surviors.git
+3. Открой проект в Godot.
+4. Запусти сцену.
    
 ---
 
