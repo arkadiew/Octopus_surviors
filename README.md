@@ -49,5 +49,3 @@ project/
 ├── config/            # Настройки игры
 ├── scripts/           # SaveManager и утилиты
 └── main.tscn          # Основная сцена
-
----
