@@ -2,7 +2,7 @@
 
 ![Godot Engine](https://img.shields.io/badge/Godot-4.x-blue?logo=godot-engine&logoColor=white)
 ![Language](https://img.shields.io/badge/Language-GDScript-orange)
-![License](https://img.shields.io/badge/License-MIT-green)
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 ![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
 
 Простая **2D-игра** на **Godot Engine**, где игрок собирает монеты на случайно сгенерированной карте, избегая врагов.  
