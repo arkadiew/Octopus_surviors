@@ -470,13 +470,31 @@ func _add_wall(rect: Rect2) -> void:
 	wall.add_child(collider)
 	wall.position = rect.position
 	add_child(wall)
+	
 #Конвертеры
+
 func _v2i_to_arr(v: Vector2i) -> Array:
 	return [v.x, v.y]
 
 func _arr_to_v2i(a: Array) -> Vector2i:
 	return Vector2i(int(a[0]), int(a[1]))
 	
+# проверка близости к зданиям
+func is_near_building(cell: Vector2i, radius: int = 2) -> bool:
+	for occ in occupied_cells:
+		if cell.distance_to(occ) <= radius:
+			return true
+	return false
+	
+func get_map_px_size() -> Vector2:
+	return Vector2(map_size) * Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
+	
+func is_inside_map_with_margin(pos: Vector2, margin: float = 64.0) -> bool:
+	var map_px_size = get_map_px_size()
+	return pos.x >= margin and pos.y >= margin \
+		and pos.x <= map_px_size.x - margin \
+		and pos.y <= map_px_size.y - margin
+		
 #размер тайла с учётом масштаба	
 func get_tile_px() -> Vector2:
 	return Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
@@ -565,39 +583,46 @@ func spawn_player_safe() -> void:
 	#ставит игрока в безопасное место
 	var tile_px := Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
 	var tile_center_offset := tile_px * 0.5
-	var max_tries := 200
+	var max_tries := 500
 	var tries := 0
-	# ограничим спавн центральным квадратом
-	var margin := map_size / 4 # отступ от краёв карты
+	# ограничиваем область поиска центральной зоной карты
+	var margin := map_size / 3
 	var min_x := margin.x
 	var max_x := map_size.x - margin.x
 	var min_y := margin.y
 	var max_y := map_size.y - margin.y
 	while tries < max_tries:
 		tries += 1
-		# случайная клетка только в центре карты
 		var cell: Vector2i = Vector2i(
 			randi_range(min_x, max_x - 1),
 			randi_range(min_y, max_y - 1)
 		)
+		# нельзя на границе
 		if is_near_border(cell):
 			continue
+		# нельзя на здании или занятой клетке
 		if is_cell_occupied(cell):
 			continue
+		# нельзя рядом со зданием (радиус 2 клетки)
+		if is_near_building(cell, 2):
+			continue
+		# проверка окружения (чтобы рядом не было плотных объектов)
 		if not is_valid_spawn(cell, 6, 6):
 			continue
+		# ставим игрока
 		var pos: Vector2 = cell_to_px(cell) + tile_center_offset
 		player.global_position = pos
 		if not player.is_inside_tree():
 			add_child(player)
 			_register_object(player)
 		return
+	#центр карты
 	push_warning("spawn_player_safe: не нашли безопасную клетку, ставим игрока в центр")
 	player.global_position = get_map_center_px()
 	if not player.is_inside_tree():
 		add_child(player)
 		_register_object(player)
-		
+
 #Сохранение и загрузка  
 func save_game() -> void:
 	#собирает данные: очки, игрока, здания, врагов, монеты
