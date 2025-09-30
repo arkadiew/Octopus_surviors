@@ -57,8 +57,6 @@ var coins_count: int
 var enemy_speed: float
 var building_density: int 
 var player_safe_radius: int
-var coin_spawn_min_dist: float
-var coin_spawn_max_dist: float 
 var coin_min_spacing: float 
 var coin_near_building_chance: float 
 var coin_near_building_min_dist: int 
@@ -177,8 +175,6 @@ func _load_config() -> void:
 	var invul_time      = config.get_value("player", "invulnerable_time", 0.6)
 	var knockback       = config.get_value("player", "hurt_knockback", 260.0)
 	coins_count = config.get_value("victory", "coins_required", 10)
-	coin_spawn_min_dist = config.get_value("coins", "spawn_min_dist", 200.0)
-	coin_spawn_max_dist = config.get_value("coins", "spawn_max_dist", 600.0)
 	coin_min_spacing    = config.get_value("coins", "coin_min_spacing", 128.0)
 	coin_near_building_chance = config.get_value("coins", "spawn_near_building_chance", 0.25)
 	coin_near_building_min_dist = config.get_value("coins", "spawn_near_building_min_dist", 1)
@@ -219,9 +215,8 @@ func spawn_coins_across_map() -> void:
 	if coin_scene == null:
 		return
 	var margin: float = 64.0
-	var tile_px = Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
-	var map_px_size = cell_to_px(map_size)
-	var tile_center_offset = tile_px * 0.5
+	var tile_px := Vector2(ground_layer.tile_set.tile_size)
+	var tile_center_offset := tile_px * 0.5
 	var spawned := 0
 	var tries := 0
 	var max_tries := coins_count * 20
@@ -279,26 +274,41 @@ func spawn_enemy_outside_screen() -> void:
 	var cam = get_viewport().get_camera_2d()
 	if cam == null:
 		return
-	var map_px_size = cell_to_px(map_size)
+
 	var margin: float = 64.0
+	var tile_center_offset = Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale * 0.5
+	var map_px_size = cell_to_px(map_size)
+
 	var tries = 0
-	var pos: Vector2
-	while tries < 10:
-		var dir = Vector2(randf_range(-1, 1), randf_range(-1, 1)).normalized()
-		pos = cam.global_position + dir * spawn_distance
-		pos.x = clamp(pos.x, margin, map_px_size.x - margin)
-		pos.y = clamp(pos.y, margin, map_px_size.y - margin)
-		var cell = ground_layer.local_to_map(pos)
-		if is_valid_spawn(cell, 6, 2):
-			break
+	while tries < 20:
 		tries += 1
-	if tries >= 10:
+		# случайная клетка карты
+		var cell = Vector2i(randi() % map_size.x, randi() % map_size.y)
+		if is_near_border(cell):
+			continue
+		if not is_valid_spawn(cell, 6, 2):
+			continue
+
+		var pos = cell_to_px(cell) + tile_center_offset
+		# проверка что внутри карты
+		if pos.x < margin or pos.y < margin or pos.x > map_px_size.x - margin or pos.y > map_px_size.y - margin:
+			continue
+
+		# проверка — за пределами экрана
+		var screen_rect = Rect2(
+			cam.global_position - get_viewport().size * 0.5,
+			get_viewport().size
+		).grow(200) # +200px, чтобы точно не было видно спавна
+		if screen_rect.has_point(pos):
+			continue
+
+		# создаём врага
+		var enemy = enemy_scene.instantiate()
+		enemy.set("speed", enemy_speed)
+		add_child(enemy)
+		enemy.global_position = pos
+		_register_object(enemy)
 		return
-	var enemy = enemy_scene.instantiate()
-	enemy.set("speed", enemy_speed)
-	add_child(enemy)
-	enemy.global_position = pos
-	_register_object(enemy)
 	
 #Проверка спавна
 func is_valid_spawn(cell: Vector2i, min_dist_from_player: float = 0.0, min_dist_from_objects: float = 0.0) -> bool:
@@ -442,13 +452,13 @@ func pick_weighted_building() -> Dictionary:
 	
 #Ограничения карты
 func create_invisible_walls() -> void:
-	#создаёт невидимые стены вокруг карты
-	var map_px_size = cell_to_px(map_size)
-	var wall_thickness: float = 64.0
+	var map_px_size = Vector2(map_size) * get_tile_px()
+	var wall_thickness = 64.0
 	_add_wall(Rect2(Vector2(0, -wall_thickness), Vector2(map_px_size.x, wall_thickness)))
 	_add_wall(Rect2(Vector2(0, map_px_size.y), Vector2(map_px_size.x, wall_thickness)))
 	_add_wall(Rect2(Vector2(-wall_thickness, 0), Vector2(wall_thickness, map_px_size.y)))
 	_add_wall(Rect2(Vector2(map_px_size.x, 0), Vector2(wall_thickness, map_px_size.y)))
+
 	
 func _add_wall(rect: Rect2) -> void:
 	var wall = StaticBody2D.new()
@@ -463,18 +473,31 @@ func _add_wall(rect: Rect2) -> void:
 #Конвертеры
 func _v2i_to_arr(v: Vector2i) -> Array:
 	return [v.x, v.y]
-	
+
 func _arr_to_v2i(a: Array) -> Vector2i:
 	return Vector2i(int(a[0]), int(a[1]))
 	
-func cell_to_px(cell: Vector2i) -> Vector2:
-	var cell_px = Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
-	return Vector2(cell) * cell_px
+#размер тайла с учётом масштаба	
+func get_tile_px() -> Vector2:
+	return Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
 	
+# клетка -> позиция в пикселях	
+func cell_to_px(cell: Vector2i) -> Vector2:
+	return Vector2(cell) * get_tile_px()
+	
+# позиция в пикселях -> клетка
+func px_to_cell(pos: Vector2) -> Vector2i:
+	var tile_px = get_tile_px()
+	return Vector2i(floor(pos.x / tile_px.x), floor(pos.y / tile_px.y))
+	
+#центр карты в пикселях
 func get_map_center_px() -> Vector2:
-	var cell_px = Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
-	var map_px = Vector2(map_size) * cell_px
-	return map_px * 0.5
+	return Vector2(map_size) * get_tile_px() * 0.5
+	
+func is_inside_map(pos: Vector2) -> bool:
+	var cell_px := Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
+	var map_px_size := Vector2(map_size) * cell_px
+	return pos.x >= 0.0 and pos.y >= 0.0 and pos.x < map_px_size.x and pos.y < map_px_size.y
 	
 func is_cell_occupied(cell: Vector2i) -> bool:
 	return cell in occupied_cells
@@ -510,7 +533,7 @@ func spawn_enemies_across_map() -> void:
 		if is_cell_occupied(cell):
 			continue
 			
-		var player_cell = ground_layer.local_to_map(player.global_position)
+		var player_cell = px_to_cell(player.global_position)
 		if cell.distance_to(player_cell) < player_safe_radius:
 			continue
 			
@@ -540,33 +563,40 @@ func spawn_enemies_across_map() -> void:
 #Спавн игрока
 func spawn_player_safe() -> void:
 	#ставит игрока в безопасное место
-	var tile_px: Vector2 = Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
-	var tile_center_offset: Vector2 = tile_px * 0.5
-	var map_px_size: Vector2 = cell_to_px(map_size)
-	var margin: float = 64.0
-	var max_tries: int = 1000
-	var tries: int = 0
+	var tile_px := Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
+	var tile_center_offset := tile_px * 0.5
+	var max_tries := 200
+	var tries := 0
+	# ограничим спавн центральным квадратом
+	var margin := map_size / 4 # отступ от краёв карты
+	var min_x := margin.x
+	var max_x := map_size.x - margin.x
+	var min_y := margin.y
+	var max_y := map_size.y - margin.y
 	while tries < max_tries:
 		tries += 1
-		var cell: Vector2i = Vector2i(randi() % map_size.x, randi() % map_size.y)
-		
+		# случайная клетка только в центре карты
+		var cell: Vector2i = Vector2i(
+			randi_range(min_x, max_x - 1),
+			randi_range(min_y, max_y - 1)
+		)
 		if is_near_border(cell):
 			continue
-			
 		if is_cell_occupied(cell):
 			continue
-			
-		if not is_valid_spawn(cell, 6, 6): 
+		if not is_valid_spawn(cell, 6, 6):
 			continue
-			
 		var pos: Vector2 = cell_to_px(cell) + tile_center_offset
-		pos.x = clamp(pos.x, margin, map_px_size.x - margin)
-		pos.y = clamp(pos.y, margin, map_px_size.y - margin)
-		
 		player.global_position = pos
+		if not player.is_inside_tree():
+			add_child(player)
+			_register_object(player)
+		return
+	push_warning("spawn_player_safe: не нашли безопасную клетку, ставим игрока в центр")
+	player.global_position = get_map_center_px()
+	if not player.is_inside_tree():
 		add_child(player)
 		_register_object(player)
-		return
 		
 #Сохранение и загрузка  
 func save_game() -> void:
