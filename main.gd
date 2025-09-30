@@ -274,34 +274,37 @@ func spawn_enemy_outside_screen() -> void:
 	var cam = get_viewport().get_camera_2d()
 	if cam == null:
 		return
-
 	var margin: float = 64.0
+	# смещение к центру тайла
 	var tile_center_offset = Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale * 0.5
+	# размер карты в пикселях
 	var map_px_size = cell_to_px(map_size)
-
 	var tries = 0
-	while tries < 20:
+	while tries < 20: #ограничение на количество попыток
 		tries += 1
-		# случайная клетка карты
+		# случайная клетка на карте
 		var cell = Vector2i(randi() % map_size.x, randi() % map_size.y)
+		# нельзя на границе и на здании
 		if is_near_border(cell):
 			continue
+		# проверка допустимости
 		if not is_valid_spawn(cell, 6, 2):
 			continue
-
+		# враг не ближе 400 px от игрока
+		if not is_far_enough_from_player(cell, 400.0):
+			continue
+		# перевод клетки в позицию в пикселях
 		var pos = cell_to_px(cell) + tile_center_offset
-		# проверка что внутри карты
+		#проверка что внутри карты
 		if pos.x < margin or pos.y < margin or pos.x > map_px_size.x - margin or pos.y > map_px_size.y - margin:
 			continue
-
-		# проверка — за пределами экрана
+		#проверка - за пределами экрана
 		var screen_rect = Rect2(
 			cam.global_position - get_viewport().size * 0.5,
 			get_viewport().size
-		).grow(200) # +200px, чтобы точно не было видно спавна
+		).grow(200)  # +200 px запас, чтобы игрок не видел спавн
 		if screen_rect.has_point(pos):
 			continue
-
 		# создаём врага
 		var enemy = enemy_scene.instantiate()
 		enemy.set("speed", enemy_speed)
@@ -309,7 +312,7 @@ func spawn_enemy_outside_screen() -> void:
 		enemy.global_position = pos
 		_register_object(enemy)
 		return
-	
+		
 #Проверка спавна
 func is_valid_spawn(cell: Vector2i, min_dist_from_player: float = 0.0, min_dist_from_objects: float = 0.0) -> bool:
 	#проверяет, можно ли спавнить объект в ячейке
@@ -486,6 +489,11 @@ func is_near_building(cell: Vector2i, radius: int = 2) -> bool:
 			return true
 	return false
 	
+#проверка расстояния от игрока
+func is_far_enough_from_player(cell: Vector2i, min_dist_px: float) -> bool:
+	var pos := cell_to_px(cell) # конвертируем клетку в пиксели
+	return pos.distance_to(player.global_position) >= min_dist_px
+	
 func get_map_px_size() -> Vector2:
 	return Vector2(map_size) * Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
 	
@@ -533,32 +541,35 @@ func spawn_enemies_across_map() -> void:
 	#размещает врагов по карте при старте
 	if enemy_scene == null:
 		return
+	# размеры тайла и смещение
 	var tile_px: Vector2 = Vector2(ground_layer.tile_set.tile_size) * ground_layer.scale
 	var tile_center_offset: Vector2 = tile_px * 0.5
-	var spawned: int = 0
+	var spawned: int = 0 #сколько врагов уже создано
 	var tries: int = 0
-	var max_tries: int = enemy_initial_count * 20
-	var positions: Array[Vector2] = []
+	var max_tries: int = enemy_initial_count * 20 #максимум попыток
+	var positions: Array[Vector2] = [] #уже занятые позиции
 	var map_px_size: Vector2 = cell_to_px(map_size)
 	var margin: float = 64.0
-	
 	while spawned < enemy_initial_count and tries < max_tries:
 		tries += 1
+		# случайная клетка карты
 		var cell: Vector2i = Vector2i(randi() % map_size.x, randi() % map_size.y)
-		
+		# нельзя на границе и на здании
 		if is_near_border(cell):
 			continue
 		if is_cell_occupied(cell):
 			continue
-			
-		var player_cell = px_to_cell(player.global_position)
-		if cell.distance_to(player_cell) < player_safe_radius:
+		# враг должен быть минимум в 400 px от игрока
+		if not is_far_enough_from_player(cell, 400.0):
 			continue
-			
+
+		# позиция врага в пикселях
 		var pos: Vector2 = cell_to_px(cell) + tile_center_offset
+		# ограничиваем врага границами карты с небольшим отступом
 		pos.x = clamp(pos.x, margin, map_px_size.x - margin)
 		pos.y = clamp(pos.y, margin, map_px_size.y - margin)
-		
+
+		# проверяем, что враг не слишком близко к другим врагам
 		var bad := false
 		for p in positions:
 			if pos.distance_to(p) < enemy_min_spacing:
@@ -566,7 +577,7 @@ func spawn_enemies_across_map() -> void:
 				break
 		if bad:
 			continue
-			
+		# создаём врага
 		var enemy = enemy_scene.instantiate()
 		enemy.global_position = pos
 		add_child(enemy)
@@ -574,7 +585,6 @@ func spawn_enemies_across_map() -> void:
 		enemy.speed = enemy_speed
 		positions.append(pos)
 		spawned += 1
-		
 	if spawned < enemy_initial_count:
 		print("spawned %d of %d (tries %d)" % [spawned, enemy_initial_count, tries])
 		
