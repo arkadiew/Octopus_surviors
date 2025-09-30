@@ -104,25 +104,44 @@ func _ready() -> void:
 	noise.seed = seed
 	noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	noise.frequency = frequency
-	if SaveManager.has_save():
+	
+	# Проверяем, не было ли рестарта
+	if get_tree().has_meta("new_game") and get_tree().get_meta("new_game"):
+		get_tree().set_meta("new_game", false) # сбросить флаг
+		# запускаем чистую новую партию
 		if not player.is_inside_tree():
 			add_child(player)
 			_register_object(player)
 		player.set("speed", player_speed)
 		player.set("health", player_health)
-		load_game()
-		create_invisible_walls()
-	else:
 		generate_map()
-
 		var center_px = get_map_center_px()
 		player.global_position = center_px
-		player.set("speed", player_speed)
-		player.set("health", player_health)
 		spawn_player_safe()
 		create_invisible_walls()
 		spawn_coins_across_map()
 		spawn_enemies_across_map()
+	else:
+		# обычная логика – если есть сейв, загрузить
+		if SaveManager.has_save():
+			if not player.is_inside_tree():
+				add_child(player)
+				_register_object(player)
+			player.set("speed", player_speed)
+			player.set("health", player_health)
+			load_game()
+			create_invisible_walls()
+		else:
+			generate_map()
+			var center_px = get_map_center_px()
+			player.global_position = center_px
+			player.set("speed", player_speed)
+			player.set("health", player_health)
+			spawn_player_safe()
+			create_invisible_walls()
+			spawn_coins_across_map()
+			spawn_enemies_across_map()
+
 		
 #Загрузка параметров из config
 func _load_config() -> void:

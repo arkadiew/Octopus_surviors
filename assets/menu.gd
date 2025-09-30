@@ -5,8 +5,10 @@ extends HBoxContainer
 
 # Кнопка "Заново"
 func _on_restart_pressed() -> void:
-	get_tree().paused = false         # снять паузу
-	get_tree().reload_current_scene() # перезапустить текущую сцену
+	get_tree().paused = false #снять паузу
+	get_tree().set_meta("new_game", true) # пометка для _ready
+	var path := get_tree().current_scene.scene_file_path
+	get_tree().change_scene_to_file(path)
 
 # Кнопка "Выход"
 func _on_exit_button_down() -> void:
